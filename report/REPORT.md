@@ -132,6 +132,7 @@ children = chunker.chunk(text)
 | Hứa Quang Linh | AgenticChunker | 9 | Tự phát hiện ranh giới chủ đề bằng embedding; mỗi chunk mang đủ ngữ cảnh 1 khái niệm triết học | Chunk lớn (avg ~4K chars) có thể chiếm nhiều context window; chạy chậm hơn (~97s trên 684K chars) |
 | Tôi Chu Bá Tuấn Anh | RecursiveChunker| 8.5| Cân bằng tốt giữa ngữ nghĩa và độ dài; giữ được cấu trúc tài liệu (paragraph/sentence); retrieval ổn định| Phụ thuộc heuristic nên đôi khi split chưa tối ưu; có thể tạo chunk rời rạc; cần tuning chunk size và overlap thêm|
 | Nguyễn Thị Tuyết | RecursiveChunker | 8.0 | Giữ ngữ cảnh tốt, ít cắt ngang đoạn | Cần tinh chỉnh thêm theo chương |
+| Nguyễn Văn Lĩnh          | SentenceChunker(3) | 8.5                   | Giữ ngữ pháp, retrieval scores cao (0.3-0.5) | Tăng số lượng chunk (1610 vs 300), có thể chậm retrieval |
 
 **Strategy nào tốt nhất cho domain này? Tại sao?**
 > AgenticChunker của Hứa Quang Linh đạt retrieval score cao nhất (9/10) vì nó tự động phát hiện ranh giới chủ đề bằng embedding, phù hợp với giáo trình triết học — nơi mỗi khái niệm (vật chất, ý thức, phép biện chứng…) cần được giữ nguyên trong một chunk để LLM trả lời chính xác. Tuy nhiên, nếu cân nhắc chi phí vận hành (tốc độ, khả năng mở rộng), ParentChildChunker là lựa chọn thực tế hơn vì đạt 8/10 nhưng chạy nhanh hơn nhiều và khai thác trực tiếp cấu trúc phân cấp sẵn có của giáo trình mà không cần gọi embedding model khi chunking.
@@ -264,7 +265,7 @@ Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạ
 > AgenticChunker của Quang Linh cho thấy việc dùng embedding để tự động phát hiện ranh giới chủ đề có thể đạt retrieval score cao hơn (9/10) so với rule-based approach. Đồng thời, cách RecursiveChunker của Tuấn Anh đạt 8.5/10 chứng minh rằng tuning tốt các heuristic đơn giản cũng cho kết quả cạnh tranh mà không cần thêm complexity.
 
 **Điều hay nhất tôi học được từ nhóm khác (qua demo):**
-> Các nhóm chọn domain có cấu trúc bảng biểu hoặc code (như tài liệu kỹ thuật) gặp nhiều khó khăn hơn với chunking vì ranh giới ngữ nghĩa không rõ ràng như giáo trình. Điều này giúp tôi nhận ra rằng việc chọn domain phù hợp (có cấu trúc phân cấp rõ) ảnh hưởng lớn đến chất lượng RAG, không chỉ riêng strategy.
+> 
 
 **Nếu làm lại, tôi sẽ thay đổi gì trong data strategy?**
 > Tôi sẽ giảm kích thước parent chunk bằng cách tách ở mức heading sâu hơn (sub-subsection) để parent_content không quá lớn (hiện avg 26K chars — dễ vượt context window LLM). Ngoài ra, tôi sẽ thêm metadata chapter/topic vào mỗi child chunk để hỗ trợ filtered search, và thử kết hợp reranker để xử lý trường hợp embedding không phân biệt được các khái niệm đối lập (như duy vật vs duy tâm, Pair 2 trong Section 5).
